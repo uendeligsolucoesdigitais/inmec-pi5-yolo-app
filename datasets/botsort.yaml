@@ -1,0 +1,8 @@
+tracker_type: botsort
+track_high_thresh: 0.3
+track_low_thresh: 0.2
+new_track_thresh: 0.4
+track_buffer: 30
+match_thresh: 0.8
+gmc: False
+strong_sort: False
