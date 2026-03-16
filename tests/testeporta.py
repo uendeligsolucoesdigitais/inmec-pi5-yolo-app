@@ -892,7 +892,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 pass
         event.accept()
 
-
 def main():
     app = QtWidgets.QApplication(sys.argv)
     app.setApplicationName(APP_TITLE)
