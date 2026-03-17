@@ -16,6 +16,7 @@ from PyQt6.QtWidgets import (
 
 try:
     import gpiod
+    from gpiod.line import Direction, Value
 except Exception as e:
     print(f"Erro ao importar gpiod: {e}")
     sys.exit(1)
@@ -28,10 +29,8 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Monitor GPIO 8 - Raspberry Pi 5")
         self.setMinimumSize(430, 260)
 
-        # Ajuste aqui se necessário:
-        self.chip_name = "gpiochip0"
+        self.chip_path = "/dev/gpiochip0"
         self.gpio_line = 8  # BCM GPIO 8
-
         self.request = None
 
         self.central_widget = QWidget()
@@ -56,7 +55,7 @@ class MainWindow(QMainWindow):
         self.value_label.setFont(QFont("Arial", 14))
 
         self.info_label = QLabel(
-            f"Chip: {self.chip_name} | Linha BCM: {self.gpio_line}\n"
+            f"Chip: {self.chip_path} | Linha BCM: {self.gpio_line}\n"
             "Atualização automática a cada 200 ms"
         )
         self.info_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -81,19 +80,15 @@ class MainWindow(QMainWindow):
 
     def setup_gpio(self):
         try:
-            # API compatível com libgpiod v2
-            config = {
-                self.gpio_line: gpiod.LineSettings(
-                    direction=gpiod.line.Direction.INPUT
-                )
-            }
-
             self.request = gpiod.request_lines(
-                self.chip_name,
+                self.chip_path,
                 consumer="monitor-gpio8-pyqt6",
-                config=config,
+                config={
+                    self.gpio_line: gpiod.LineSettings(
+                        direction=Direction.INPUT
+                    )
+                },
             )
-
             self.update_gpio_status()
 
         except Exception as e:
@@ -106,7 +101,7 @@ class MainWindow(QMainWindow):
                 self,
                 "Erro ao inicializar GPIO",
                 "Não foi possível abrir a linha GPIO.\n\n"
-                f"Chip: {self.chip_name}\n"
+                f"Chip: {self.chip_path}\n"
                 f"Linha BCM: {self.gpio_line}\n\n"
                 f"Erro: {e}\n\n"
                 "Verifique:\n"
@@ -122,11 +117,11 @@ class MainWindow(QMainWindow):
 
         value = self.request.get_value(self.gpio_line)
 
-        # compatível com enum Value.ACTIVE / INACTIVE
-        if hasattr(value, "name"):
-            return 1 if value.name == "ACTIVE" else 0
+        if value == Value.ACTIVE:
+            return 1
+        if value == Value.INACTIVE:
+            return 0
 
-        # fallback caso venha inteiro
         return 1 if int(value) else 0
 
     def update_gpio_status(self):
