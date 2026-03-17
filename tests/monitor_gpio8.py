@@ -15,10 +15,9 @@ from PyQt6.QtWidgets import (
 )
 
 try:
-    from gpiozero import DigitalInputDevice
-    from gpiozero.pins.lgpio import LGPIOFactory
+    import gpiod
 except Exception as e:
-    print(f"Erro ao importar bibliotecas GPIO: {e}")
+    print(f"Erro ao importar gpiod: {e}")
     sys.exit(1)
 
 
@@ -26,23 +25,14 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        # =========================
-        # CONFIGURAÇÃO DA GPIO
-        # =========================
-        # IO08 assumido como BCM GPIO 8
-        self.gpio_bcm = 8
-
-        # Se sua entrada tiver resistor externo já definido, deixe pull_up=None
-        # pull_up=True  -> usa pull-up interno
-        # pull_up=False -> usa pull-down interno
-        # pull_up=None  -> sem resistor interno
-        self.pull_up = None
-
-        # =========================
-        # JANELA
-        # =========================
         self.setWindowTitle("Monitor GPIO 8 - Raspberry Pi 5")
-        self.setMinimumSize(420, 260)
+        self.setMinimumSize(430, 260)
+
+        # Ajuste aqui se necessário:
+        self.chip_name = "gpiochip0"
+        self.gpio_line = 8  # BCM GPIO 8
+
+        self.request = None
 
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
@@ -66,7 +56,7 @@ class MainWindow(QMainWindow):
         self.value_label.setFont(QFont("Arial", 14))
 
         self.info_label = QLabel(
-            "Leitura em tempo real da GPIO BCM 8\n"
+            f"Chip: {self.chip_name} | Linha BCM: {self.gpio_line}\n"
             "Atualização automática a cada 200 ms"
         )
         self.info_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -82,43 +72,66 @@ class MainWindow(QMainWindow):
         self.layout.addWidget(self.info_label)
         self.layout.addWidget(self.refresh_button)
 
-        self.device = None
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_gpio_status)
 
-        self.setup_gpio()
         self.apply_unknown_style()
+        self.setup_gpio()
         self.timer.start(200)
 
     def setup_gpio(self):
         try:
-            factory = LGPIOFactory(chip=0)
-            self.device = DigitalInputDevice(
-                pin=self.gpio_bcm,
-                pull_up=self.pull_up,
-                pin_factory=factory
+            # API compatível com libgpiod v2
+            config = {
+                self.gpio_line: gpiod.LineSettings(
+                    direction=gpiod.line.Direction.INPUT
+                )
+            }
+
+            self.request = gpiod.request_lines(
+                self.chip_name,
+                consumer="monitor-gpio8-pyqt6",
+                config=config,
             )
+
+            self.update_gpio_status()
+
         except Exception as e:
-            QMessageBox.critical(
-                self,
-                "Erro ao inicializar GPIO",
-                "Não foi possível inicializar a leitura da GPIO 8.\n\n"
-                f"Erro: {e}\n\n"
-                "Verifique:\n"
-                "- se o pacote gpiozero está instalado\n"
-                "- se o usuário tem acesso a /dev/gpiochip*\n"
-                "- se a GPIO está livre e não está sendo usada por outro processo"
-            )
+            self.request = None
             self.status_label.setText("ERRO")
             self.value_label.setText("Valor lógico: indisponível")
             self.apply_error_style()
 
-    def update_gpio_status(self):
-        if self.device is None:
-            return
+            QMessageBox.critical(
+                self,
+                "Erro ao inicializar GPIO",
+                "Não foi possível abrir a linha GPIO.\n\n"
+                f"Chip: {self.chip_name}\n"
+                f"Linha BCM: {self.gpio_line}\n\n"
+                f"Erro: {e}\n\n"
+                "Verifique:\n"
+                "- se o pacote gpiod está instalado\n"
+                "- se a linha BCM está correta\n"
+                "- se o usuário tem permissão de acesso ao gpiochip\n"
+                "- se a GPIO não está em uso por outro processo"
+            )
 
+    def read_gpio_value(self):
+        if self.request is None:
+            raise RuntimeError("GPIO não inicializada.")
+
+        value = self.request.get_value(self.gpio_line)
+
+        # compatível com enum Value.ACTIVE / INACTIVE
+        if hasattr(value, "name"):
+            return 1 if value.name == "ACTIVE" else 0
+
+        # fallback caso venha inteiro
+        return 1 if int(value) else 0
+
+    def update_gpio_status(self):
         try:
-            value = self.device.value
+            value = self.read_gpio_value()
 
             if value == 1:
                 self.status_label.setText("NÍVEL ALTO")
@@ -261,8 +274,8 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event):
         try:
             self.timer.stop()
-            if self.device is not None:
-                self.device.close()
+            if self.request is not None:
+                self.request.release()
         except Exception:
             pass
         event.accept()
