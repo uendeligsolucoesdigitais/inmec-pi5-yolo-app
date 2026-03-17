@@ -16,7 +16,6 @@ from PyQt6.QtWidgets import (
 
 try:
     import gpiod
-    from gpiod.line import Direction, Value
 except Exception as e:
     print(f"Erro ao importar gpiod: {e}")
     sys.exit(1)
@@ -31,7 +30,9 @@ class MainWindow(QMainWindow):
 
         self.chip_path = "/dev/gpiochip0"
         self.gpio_line = 8  # BCM GPIO 8
-        self.request = None
+
+        self.chip = None
+        self.line = None
 
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
@@ -80,19 +81,18 @@ class MainWindow(QMainWindow):
 
     def setup_gpio(self):
         try:
-            self.request = gpiod.request_lines(
-                self.chip_path,
+            self.chip = gpiod.Chip(self.chip_path)
+            self.line = self.chip.get_line(self.gpio_line)
+            self.line.request(
                 consumer="monitor-gpio8-pyqt6",
-                config={
-                    self.gpio_line: gpiod.LineSettings(
-                        direction=Direction.INPUT
-                    )
-                },
+                type=gpiod.LINE_REQ_DIR_IN
             )
+
             self.update_gpio_status()
 
         except Exception as e:
-            self.request = None
+            self.line = None
+            self.chip = None
             self.status_label.setText("ERRO")
             self.value_label.setText("Valor lógico: indisponível")
             self.apply_error_style()
@@ -106,22 +106,15 @@ class MainWindow(QMainWindow):
                 f"Erro: {e}\n\n"
                 "Verifique:\n"
                 "- se o pacote gpiod está instalado\n"
-                "- se a linha BCM está correta\n"
-                "- se o usuário tem permissão de acesso ao gpiochip\n"
+                "- se o usuário tem permissão em /dev/gpiochip*\n"
                 "- se a GPIO não está em uso por outro processo"
             )
 
     def read_gpio_value(self):
-        if self.request is None:
+        if self.line is None:
             raise RuntimeError("GPIO não inicializada.")
 
-        value = self.request.get_value(self.gpio_line)
-
-        if value == Value.ACTIVE:
-            return 1
-        if value == Value.INACTIVE:
-            return 0
-
+        value = self.line.get_value()
         return 1 if int(value) else 0
 
     def update_gpio_status(self):
@@ -269,8 +262,10 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event):
         try:
             self.timer.stop()
-            if self.request is not None:
-                self.request.release()
+            if self.line is not None:
+                self.line.release()
+            if self.chip is not None:
+                self.chip.close()
         except Exception:
             pass
         event.accept()
