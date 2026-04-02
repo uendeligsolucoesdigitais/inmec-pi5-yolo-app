@@ -35,6 +35,10 @@ class PedalWatcher(QObject):
         self._active = False
         self._last_ts = 0.0
         self.pin_bcm = None
+        self._chip = None
+        self._line = None
+        self._poll_timer = None
+        self._last_gpio_value = 1  # repouso = nível alto
 
         # preferências de overlay (config)
         cfg = ConfigManager()
@@ -72,29 +76,56 @@ class PedalWatcher(QObject):
         if self.video_widget is not None:
             self.video_widget.installEventFilter(self)
 
-        # Inicializa GPIO
+        # Inicializa GPIO via gpiod (mesma abordagem validada em monitor_gpio8.py)
         try:
-            from gpiozero import Button
-            # pull_up=True -> repouso=1; pressionado=0; when_pressed na borda 1->0
-            self._btn = Button(self.pin_bcm, pull_up=True, bounce_time=self.debounce_ms / 1000.0)
-            self._btn.when_pressed = self._on_falling_edge
+            import gpiod
+            self._chip = gpiod.Chip("/dev/gpiochip0")
+            self._line = self._chip.get_line(self.pin_bcm)
+            self._line.request(consumer="pedal-watcher", type=gpiod.LINE_REQ_DIR_IN)
+            self._last_gpio_value = int(self._line.get_value())
+            self._poll_timer = QTimer()
+            self._poll_timer.timeout.connect(self._poll_gpio)
+            self._poll_timer.start(100)
             self._active = True
             print(CFG.msg_active_ok.format(pin=self.pin_bcm, debounce=self.debounce_ms))
         except Exception as e:
-            self._btn = None
+            self._chip = None
+            self._line = None
             self._active = False
             print(CFG.msg_disabled_info.format(e=e))
 
     def stop(self):
         """Libera recursos do hardware."""
         try:
-            if self._btn is not None:
-                self._btn.close()
+            if self._poll_timer is not None:
+                self._poll_timer.stop()
+        except Exception:
+            pass
+        try:
+            if self._line is not None:
+                self._line.release()
+        except Exception:
+            pass
+        try:
+            if self._chip is not None:
+                self._chip.close()
         except Exception:
             pass
         finally:
-            self._btn = None
+            self._poll_timer = None
+            self._line = None
+            self._chip = None
             self._active = False
+
+    def _poll_gpio(self):
+        """Detecta borda de descida (1->0) no pino do pedal."""
+        try:
+            value = int(self._line.get_value())
+            if self._last_gpio_value == 1 and value == 0:
+                self._on_falling_edge()
+            self._last_gpio_value = value
+        except Exception:
+            pass
 
     # manter overlay centralizado no resize do vídeo
     def eventFilter(self, obj, event):
