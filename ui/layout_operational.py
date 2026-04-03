@@ -16,24 +16,20 @@ def create_operational_layout(parent_widget, acoes):
     # Painel de Controle (coluna 0) — MANTIDO
     # =========================
     painel_layout = QVBoxLayout()
-    painel_layout.setSpacing(10)
+    painel_layout.setSpacing(8)
+    painel_layout.setContentsMargins(6, 10, 6, 10)
 
-    painel_titulo = QLabel("Painel")
-    painel_titulo.setStyleSheet("color: white; font-size: 18px;")
-    painel_layout.addWidget(painel_titulo)
-    painel_layout.addStretch()
-
-    estilo_botao_topo = """
+    estilo_botao_icone = """
         QPushButton {
             background: transparent;
-            color: #e8f0f6;
             border: 1px solid #e8f0f6;
             border-radius: 8px;
-            padding: 8px 14px;
-            qproperty-iconSize: 18px;
+            padding: 6px;
+            qproperty-iconSize: 22px;
         }
         QPushButton:hover { background: rgba(255,255,255,0.15); }
     """
+    estilo_botao_icone_tooltip = estilo_botao_icone
 
     botoes = {}
     botoes_infos = [
@@ -47,59 +43,55 @@ def create_operational_layout(parent_widget, acoes):
     ]
 
     for nome, texto in botoes_infos:
-        botao = QPushButton(f" {texto}")
-        botao.setIcon(carregar_svg_branco(f"img/svg/{nome}.svg", tamanho=40))
-        botao.setStyleSheet(estilo_botao_topo)
-        botao.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        painel_layout.addWidget(botao)
+        botao = QPushButton()
+        botao.setIcon(carregar_svg_branco(f"img/svg/{nome}.svg", tamanho=22))
+        botao.setToolTip(texto)
+        botao.setStyleSheet(estilo_botao_icone_tooltip)
+        botao.setFixedSize(50, 40)
+        painel_layout.addWidget(botao, 0, Qt.AlignHCenter)
         botoes[nome] = botao
 
     painel_layout.addStretch()
 
     # Botão laranja "Reiniciar"
-    botao_reiniciar_laranja = QPushButton(" Reiniciar")
-    botao_reiniciar_laranja.setIcon(carregar_svg_branco("img/svg/reiniciar.svg", tamanho=40))
+    botao_reiniciar_laranja = QPushButton()
+    botao_reiniciar_laranja.setIcon(carregar_svg_branco("img/svg/reiniciar.svg", tamanho=22))
+    botao_reiniciar_laranja.setToolTip("Reiniciar")
     botao_reiniciar_laranja.setStyleSheet("""
         QPushButton {
             background-color: #f19267;
-            color: black;
-            border: 1px solid white;
-            padding: 10px 20px;
+            border: none;
             border-radius: 8px;
-            font-size: 14px;
+            padding: 8px;
+            qproperty-iconSize: 22px;
         }
         QPushButton:hover { background-color: #e65b0f; }
     """)
-    botao_reiniciar_laranja.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+    botao_reiniciar_laranja.setFixedSize(50, 40)
     botao_reiniciar_laranja.clicked.connect(parent_widget._reiniciar_aplicacao)
-    painel_layout.addWidget(botao_reiniciar_laranja)
+    painel_layout.addWidget(botao_reiniciar_laranja, 0, Qt.AlignHCenter)
 
     # Botão "Sair"
-    botao_sair = QPushButton(" Sair")
-    botao_sair.setIcon(carregar_svg_branco("img/svg/sair.svg", tamanho=40))
+    botao_sair = QPushButton()
+    botao_sair.setIcon(carregar_svg_branco("img/svg/sair.svg", tamanho=22))
+    botao_sair.setToolTip("Sair")
     botao_sair.setStyleSheet("""
         QPushButton {
             background-color: #f74a5c;
-            color: white;
-            border: 1px solid white;
-            padding: 10px 20px;
+            border: none;
             border-radius: 8px;
-            font-size: 14px;
+            padding: 8px;
+            qproperty-iconSize: 22px;
         }
         QPushButton:hover { background-color: #f72e43; }
     """)
-    botao_sair.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-    wrapper_layout = QHBoxLayout()
-    wrapper_layout.addWidget(botao_sair)
-
-    painel_layout.addStretch()
-    painel_layout.addLayout(wrapper_layout)
-    painel_layout.setContentsMargins(10, 10, 10, 20)
+    botao_sair.setFixedSize(50, 40)
+    painel_layout.addWidget(botao_sair, 0, Qt.AlignHCenter)
 
     painel_widget = QWidget()
     painel_widget.setLayout(painel_layout)
-    painel_widget.setMinimumWidth(160)
-    painel_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+    painel_widget.setFixedWidth(70)
+    painel_widget.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
     painel_widget.setStyleSheet("background-color: #3a556f; border-radius: 10px;")
     grid.addWidget(painel_widget, 0, 0)
 
@@ -213,9 +205,8 @@ def create_operational_layout(parent_widget, acoes):
 
     coluna_direita_widget = QWidget()
     coluna_direita_widget.setLayout(coluna_direita_layout)
-    coluna_direita_widget.setMinimumWidth(200)
-    coluna_direita_widget.setMaximumWidth(240)
-    coluna_direita_widget.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
+    coluna_direita_widget.setFixedWidth(220)
+    coluna_direita_widget.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
     grid.addWidget(coluna_direita_widget, 0, 2)
 
     # =========================
