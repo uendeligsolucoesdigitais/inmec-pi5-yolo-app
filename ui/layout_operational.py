@@ -185,13 +185,27 @@ def create_operational_layout(parent_widget, acoes):
     estilo_sensor_lbl = "color: white; font-size: 12px;"
 
     def _sensor_row(svg_path, texto):
+        from PySide6.QtGui import QImage, QPainter, QColor, QPixmap
+        from PySide6.QtSvg import QSvgRenderer
+        import os
         row = QHBoxLayout()
         row.setSpacing(4)
         row.setContentsMargins(0, 0, 0, 0)
-        icon = carregar_svg_branco(svg_path, tamanho=14)
+        icon_lbl = QLabel()
+        icon_lbl.setFixedSize(14, 14)
+        if os.path.exists(svg_path):
+            img = QImage(14, 14, QImage.Format_ARGB32)
+            img.fill(Qt.transparent)
+            renderer = QSvgRenderer(svg_path)
+            painter = QPainter(img)
+            renderer.render(painter)
+            painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
+            painter.fillRect(img.rect(), QColor("white"))
+            painter.end()
+            icon_lbl.setPixmap(QPixmap.fromImage(img))
         lbl = QLabel(texto)
         lbl.setStyleSheet(estilo_sensor_lbl)
-        row.addWidget(icon, 0)
+        row.addWidget(icon_lbl, 0)
         row.addWidget(lbl, 1)
         return row, lbl
 
