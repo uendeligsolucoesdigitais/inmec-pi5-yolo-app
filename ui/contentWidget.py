@@ -244,10 +244,10 @@ class ContentWidget(QWidget):
 
 
     def _atualizar_valores_sensores(self, dados):
-        self.label_temp.setText(f"🌡️ Temperatura: {dados['temperatura']} °C")
-        self.label_umi.setText(f"💧 Umidade: {dados['umidade']} %")
-        self.label_pre.setText(f"🌪️ Pressão: {dados['pressao']} hPa")
-        self.label_lux.setText(f"🔆 Luminosidade: {dados['luminosidade']} lux")
+        self.label_temp.setText(f"Temperatura: {dados['temperatura']} °C")
+        self.label_umi.setText(f"Umidade: {dados['umidade']} %")
+        self.label_pre.setText(f"Pressão: {dados['pressao']} hPa")
+        self.label_lux.setText(f"Luminosidade: {dados['luminosidade']} lux")
 
     def closeEvent(self, event):
         if hasattr(self, 'sensor_worker') and self.sensor_worker:

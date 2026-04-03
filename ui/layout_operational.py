@@ -180,27 +180,39 @@ def create_operational_layout(parent_widget, acoes):
 
     # ---- SENSORES
     painel_sensores = QVBoxLayout()
-    painel_sensores.setSpacing(6)
+    painel_sensores.setSpacing(4)
 
-    label_temp = QLabel("🌡️ Temperatura: -- °C")
-    label_umi = QLabel("💧 Umidade: -- %")
-    label_pre = QLabel("🌪️ Pressão: -- hPa")
-    label_lux = QLabel("🔆 Luminosidade: -- lux")
+    estilo_sensor_lbl = "color: white; font-size: 12px;"
 
-    for lbl in (label_temp, label_umi, label_pre, label_lux):
-        lbl.setStyleSheet("color: white; font-size: 12px; padding: 2px 0;")
-        lbl.setWordWrap(False)
-        painel_sensores.addWidget(lbl)
+    def _sensor_row(svg_path, texto):
+        row = QHBoxLayout()
+        row.setSpacing(4)
+        row.setContentsMargins(0, 0, 0, 0)
+        icon = carregar_svg_branco(svg_path, tamanho=14)
+        lbl = QLabel(texto)
+        lbl.setStyleSheet(estilo_sensor_lbl)
+        row.addWidget(icon, 0)
+        row.addWidget(lbl, 1)
+        return row, lbl
+
+    row_temp, label_temp = _sensor_row("img/svg/temperatura.svg", "Temperatura: -- °C")
+    row_umi,  label_umi  = _sensor_row("img/svg/sensores.svg",    "Umidade: -- %")
+    row_pre,  label_pre  = _sensor_row("img/svg/sensores.svg",    "Pressão: -- hPa")
+    row_lux,  label_lux  = _sensor_row("img/svg/sensores.svg",    "Luminosidade: -- lux")
+
+    for row in (row_temp, row_umi, row_pre, row_lux):
+        painel_sensores.addLayout(row)
 
     widget_sensores = QWidget()
     widget_sensores.setLayout(painel_sensores)
-    widget_sensores.setStyleSheet("background-color: #3a556f; border-radius: 10px; padding: 10px;")
-    widget_sensores.setMaximumHeight(130)
+    widget_sensores.setStyleSheet("background-color: #3a556f; border-radius: 10px; padding: 8px;")
     coluna_direita_layout.addWidget(widget_sensores)
 
     coluna_direita_widget = QWidget()
     coluna_direita_widget.setLayout(coluna_direita_layout)
-    coluna_direita_widget.setFixedWidth(210)
+    coluna_direita_widget.setMinimumWidth(200)
+    coluna_direita_widget.setMaximumWidth(240)
+    coluna_direita_widget.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
     grid.addWidget(coluna_direita_widget, 0, 2)
 
     # =========================
