@@ -18,7 +18,7 @@ def create_operational_layout(parent_widget, acoes):
     painel_layout = QVBoxLayout()
     painel_layout.setSpacing(10)
 
-    painel_titulo = QLabel("Painel de Controle")
+    painel_titulo = QLabel("Painel")
     painel_titulo.setStyleSheet("color: white; font-size: 18px;")
     painel_layout.addWidget(painel_titulo)
     painel_layout.addStretch()
@@ -151,9 +151,9 @@ def create_operational_layout(parent_widget, acoes):
         f"background-color: {cor};"
         "color: black;"
         "font-weight: bold;"
-        "padding: 10px;"
+        "padding: 6px 4px;"
         "border-radius: 10px;"
-        "font-size: 14px;"
+        "font-size: 13px;"
     )
 
     label_detectados = QLabel("DETECTADOS: 0")
@@ -199,7 +199,7 @@ def create_operational_layout(parent_widget, acoes):
 
     coluna_direita_widget = QWidget()
     coluna_direita_widget.setLayout(coluna_direita_layout)
-    coluna_direita_widget.setMinimumWidth(200)
+    coluna_direita_widget.setFixedWidth(175)
     grid.addWidget(coluna_direita_widget, 0, 2)
 
     # =========================

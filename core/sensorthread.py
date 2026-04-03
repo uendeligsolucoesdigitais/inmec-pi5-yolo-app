@@ -32,9 +32,9 @@ class SensorWorker(QObject):
         try:
             config = self.bdl.get_config_data()
             valor = config.get("AmostraSensores")
-            return int(valor) if valor else 120
+            return int(valor) if valor else 1
         except Exception:
-            return 120
+            return 1
 
     def stop(self):
         self._running = False
