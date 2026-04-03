@@ -15,7 +15,7 @@ class TopBarWidget(QWidget):
 
         super().__init__()
 
-        self.setFixedHeight(90)
+        self.setFixedHeight(108)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.setStyleSheet("background-color: #2E4459;")
 
@@ -64,8 +64,19 @@ class TopBarWidget(QWidget):
         operacao_layout.addWidget(icon_operacao)
         operacao_layout.addWidget(self.label_operacao)
 
+        dataset_layout = QHBoxLayout()
+        dataset_layout.setSpacing(5)
+        icon_dataset = self._carregar_svg("img/svg/OperacaoID.svg", size=16, cor="#9ab8d4")
+        nome_model   = config.get("Model")   or "-"
+        nome_classes = config.get("Classes") or "-"
+        self.label_dataset = QLabel(f"Dataset: {nome_model}   |   Classe: {nome_classes}")
+        self.label_dataset.setStyleSheet("color: #9ab8d4; font-size: 12px;")
+        dataset_layout.addWidget(icon_dataset)
+        dataset_layout.addWidget(self.label_dataset)
+
         info_layout.addLayout(modulo_layout)
         info_layout.addLayout(operacao_layout)
+        info_layout.addLayout(dataset_layout)
         linha_superior.addLayout(info_layout)
 
         # ÍCONES DE STATUS
