@@ -115,6 +115,7 @@ def create_operational_layout(parent_widget, acoes):
     camera_label.setScaledContents(True)
 
     camera_center_layout = QVBoxLayout()
+    camera_center_layout.setContentsMargins(12, 10, 12, 10)  # ~5% de margem
     camera_center_layout.addStretch()
     camera_center_layout.addWidget(camera_label, alignment=Qt.AlignCenter)
     camera_center_layout.addStretch()
@@ -182,37 +183,25 @@ def create_operational_layout(parent_widget, acoes):
     painel_sensores = QVBoxLayout()
     painel_sensores.setSpacing(4)
 
-    estilo_sensor_lbl = "color: white; font-size: 12px;"
-
-    def _sensor_row(svg_path, texto):
-        from PySide6.QtGui import QImage, QPainter, QColor, QPixmap
-        from PySide6.QtSvg import QSvgRenderer
-        import os
+    def _sensor_row(cor, texto):
         row = QHBoxLayout()
-        row.setSpacing(4)
+        row.setSpacing(6)
         row.setContentsMargins(0, 0, 0, 0)
-        icon_lbl = QLabel()
-        icon_lbl.setFixedSize(14, 14)
-        if os.path.exists(svg_path):
-            img = QImage(14, 14, QImage.Format_ARGB32)
-            img.fill(Qt.transparent)
-            renderer = QSvgRenderer(svg_path)
-            painter = QPainter(img)
-            renderer.render(painter)
-            painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
-            painter.fillRect(img.rect(), QColor("white"))
-            painter.end()
-            icon_lbl.setPixmap(QPixmap.fromImage(img))
+        dot = QLabel()
+        dot.setFixedSize(8, 8)
+        dot.setStyleSheet(
+            f"background-color: {cor}; border-radius: 4px; min-width: 8px; max-width: 8px;"
+        )
         lbl = QLabel(texto)
-        lbl.setStyleSheet(estilo_sensor_lbl)
-        row.addWidget(icon_lbl, 0)
+        lbl.setStyleSheet("color: white; font-size: 12px;")
+        row.addWidget(dot, 0, Qt.AlignVCenter)
         row.addWidget(lbl, 1)
         return row, lbl
 
-    row_temp, label_temp = _sensor_row("img/svg/temperatura.svg", "Temperatura: -- °C")
-    row_umi,  label_umi  = _sensor_row("img/svg/sensores.svg",    "Umidade: -- %")
-    row_pre,  label_pre  = _sensor_row("img/svg/sensores.svg",    "Pressão: -- hPa")
-    row_lux,  label_lux  = _sensor_row("img/svg/sensores.svg",    "Luminosidade: -- lux")
+    row_temp, label_temp = _sensor_row("#EF4444", "Temperatura: -- °C")
+    row_umi,  label_umi  = _sensor_row("#22D3EE", "Umidade: -- %")
+    row_pre,  label_pre  = _sensor_row("#10B981", "Pressão: -- hPa")
+    row_lux,  label_lux  = _sensor_row("#F59E0B", "Luminosidade: -- lux")
 
     for row in (row_temp, row_umi, row_pre, row_lux):
         painel_sensores.addLayout(row)
