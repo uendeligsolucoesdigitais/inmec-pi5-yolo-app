@@ -13,11 +13,10 @@ except Exception:
     except Exception:
         _SMBus = None
 
-I2C_BUS        = 1
-BH1750_ADDR    = 0x5C
-CMD_POWER_ON   = 0x01
-CMD_RESET      = 0x07
-CMD_CONT_HIGH_RES = 0x10
+I2C_BUS         = 1
+BH1750_ADDRS    = [0x23, 0x5C]   # tenta os dois endereços possíveis
+CMD_POWER_ON    = 0x01
+CMD_RESET       = 0x07
 
 # ----------- Sense HAT -----------
 try:
@@ -32,6 +31,7 @@ class SensorManager:
     def __init__(self):
         self._pi_detected        = self._is_raspberry_pi()
         self._bh_bus             = None
+        self._bh_addr            = None
         self._sh                 = None
         self._sensor_disponivel  = False
 
@@ -58,12 +58,21 @@ class SensorManager:
             return
         try:
             bus = _SMBus(I2C_BUS)
-            bus.write_byte(BH1750_ADDR, CMD_POWER_ON)
-            self._bh_bus = bus
-            print(f"BH1750: OK em 0x{BH1750_ADDR:02X}")
         except Exception as e:
-            print(f"BH1750: não foi possível inicializar: {e}")
-            self._bh_bus = None
+            print(f"BH1750: não foi possível abrir I2C bus: {e}")
+            return
+        for addr in BH1750_ADDRS:
+            try:
+                bus.write_byte(addr, CMD_POWER_ON)
+                time.sleep(0.01)
+                self._bh_bus  = bus
+                self._bh_addr = addr
+                print(f"BH1750: OK em 0x{addr:02X}")
+                return
+            except Exception:
+                continue
+        print("BH1750: nenhum dispositivo encontrado em 0x23 ou 0x5C.")
+        self._bh_bus = None
 
     def _inicializar_sense_hat(self):
         if not _SH_AVAILABLE:
@@ -87,17 +96,32 @@ class SensorManager:
         return self._sensor_disponivel
 
     def ler_luminosidade(self):
-        if self._bh_bus is not None:
+        if self._bh_bus is not None and self._bh_addr is not None:
             try:
-                self._bh_bus.write_byte(BH1750_ADDR, CMD_POWER_ON)
-                self._bh_bus.write_byte(BH1750_ADDR, CMD_RESET)
-                self._bh_bus.write_byte(BH1750_ADDR, CMD_CONT_HIGH_RES)
-                time.sleep(0.18)
-                data = self._bh_bus.read_i2c_block_data(BH1750_ADDR, 0x00, 2)
+                addr = self._bh_addr
+                # power on + reset
+                self._bh_bus.write_byte(addr, CMD_POWER_ON)
+                time.sleep(0.005)
+                self._bh_bus.write_byte(addr, CMD_RESET)
+                time.sleep(0.010)
+                # MTreg padrão 69 — evita valor travado
+                self._bh_bus.write_byte(addr, 0x40 | (69 >> 5))
+                time.sleep(0.002)
+                self._bh_bus.write_byte(addr, 0x60 | (69 & 0x1F))
+                time.sleep(0.002)
+                # one-time high-res (0x20) — reinicia a cada leitura
+                self._bh_bus.write_byte(addr, 0x20)
+                time.sleep(0.190)
+                data = self._bh_bus.read_i2c_block_data(addr, 0x00, 2)
                 raw  = (data[0] << 8) | data[1]
                 return round(max(0.0, raw / 1.2), 1)
             except Exception as e:
                 print(f"BH1750: erro de leitura: {e}")
+            finally:
+                try:
+                    self._bh_bus.write_byte(self._bh_addr, 0x00)  # power down
+                except Exception:
+                    pass
         return self._valor_simulado(40.0, 60.0)
 
     def ler_temperatura(self):
