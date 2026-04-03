@@ -1,3 +1,4 @@
+import platform
 from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout
 from ui.topBar import TopBarWidget
 from ui.contentWidget import ContentWidget
@@ -12,7 +13,10 @@ class JanelaPrincipal(QMainWindow):
         self.setWindowTitle("InMEC Principal")
         #self.setMinimumSize(1024, 600)
         #self.setMaximumSize(1024,600)
-        self.setFixedSize(1024,600)
+        if platform.system() == "Linux":
+            self.showFullScreen()
+        else:
+            self.setFixedSize(1024, 600)
 
         # Carrega configurações
         self.config_manager = ConfigManager()
@@ -48,7 +52,6 @@ class JanelaPrincipal(QMainWindow):
         )
         layout_principal.addWidget(self.content_widget)
 
-        #self.showFullScreen()
 
     def keyPressEvent(self, event):
         from PySide6.QtCore import Qt
