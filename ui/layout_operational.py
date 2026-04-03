@@ -37,7 +37,7 @@ def create_operational_layout(parent_widget, acoes):
 
     botoes = {}
     botoes_infos = [
-        ("reiniciar_operacao", "Reiniciar Operação"),
+        ("reiniciar_operacao", "Nova Operação"),
         ("configuracao", "Configuração"),
         ("adicionar_nc", "Adicionar NC"),
         ("acao_em_massa", "Ação em massa"),
@@ -188,7 +188,8 @@ def create_operational_layout(parent_widget, acoes):
     label_lux = QLabel("🔆 Luminosidade: -- lux")
 
     for lbl in (label_temp, label_umi, label_pre, label_lux):
-        lbl.setStyleSheet("color: white; font-size: 14px; padding: 2px 0;")
+        lbl.setStyleSheet("color: white; font-size: 12px; padding: 2px 0;")
+        lbl.setWordWrap(False)
         painel_sensores.addWidget(lbl)
 
     widget_sensores = QWidget()
@@ -199,7 +200,7 @@ def create_operational_layout(parent_widget, acoes):
 
     coluna_direita_widget = QWidget()
     coluna_direita_widget.setLayout(coluna_direita_layout)
-    coluna_direita_widget.setFixedWidth(175)
+    coluna_direita_widget.setFixedWidth(210)
     grid.addWidget(coluna_direita_widget, 0, 2)
 
     # =========================
