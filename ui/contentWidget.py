@@ -374,7 +374,10 @@ class ContentWidget(QWidget):
             self.layout_principal.addLayout(grid)
             self.status_bar.atualizar_mensagem("Sistema pronto.")
 
-            self.camera_worker = CameraWorker()
+            _model_path = self._resolver_model_path()
+            if not _model_path:
+                return
+            self.camera_worker = CameraWorker(model_path=_model_path)
             self.camera_worker.frame_ready.connect(self._atualizar_camera)
             self.camera_worker.detect_thread.log_gerado.connect(self.atualizar_status_bar)
             self.camera_worker.detect_thread.contador_atualizado.connect(self.atualizar_contador_detectados)
@@ -483,6 +486,65 @@ class ContentWidget(QWidget):
         self.window().close()
         QApplication.quit()
         os.execl(sys.executable, sys.executable, *sys.argv)
+
+    def _resolver_model_path(self):
+        """Resolve o caminho do modelo seguindo a ordem BDR → BDL → config XML."""
+        import os
+        from core.bdlmanager import BDLManager
+        from core.bdrmanager import BDRManager
+        from core.configmanager import ConfigManager
+
+        model = None
+
+        # 1) BDR
+        try:
+            cfg = ConfigManager()
+            modulo_id = cfg.get("ModuloId")
+            dados_bdr = BDRManager().read("Config", f"ModuloId='{modulo_id}'")
+            if dados_bdr:
+                model = (dados_bdr[0].get("Model") or "").strip() or None
+        except Exception:
+            pass
+
+        # 2) BDL
+        if not model:
+            try:
+                config = BDLManager().get_config_data()
+                model = (config.get("Model") or "").strip() or None if config else None
+            except Exception:
+                pass
+
+        # 3) config XML
+        if not model:
+            try:
+                model = (ConfigManager().get("Model") or "").strip() or None
+            except Exception:
+                pass
+
+        if model:
+            path = os.path.join("datasets", model) if not os.path.sep in model else model
+            if os.path.exists(path):
+                print(f"[🤖] Modelo carregado: {path}")
+                return path
+            self._erro_modelo(path)
+            return None
+
+        self._erro_modelo(None)
+        return None
+
+    def _erro_modelo(self, path):
+        from PySide6.QtWidgets import QMessageBox, QApplication
+        if path:
+            msg = f"O arquivo de modelo não foi encontrado:\n{path}\n\nO sistema não pode ser iniciado."
+        else:
+            msg = "Nenhum modelo (.pt) está configurado no BDR, BDL ou config.xml.\n\nO sistema não pode ser iniciado."
+        print(f"[❌] {msg}")
+        box = QMessageBox()
+        box.setWindowTitle("Erro de Modelo")
+        box.setText(msg)
+        box.setIcon(QMessageBox.Critical)
+        box.exec()
+        QApplication.quit()
 
     def _atualizar_classe(self):
         print("[🔁] Atualizando classe de detecção...")
