@@ -105,7 +105,7 @@ class InfraTestManager:
             print("⚠️ Sistema não está rodando em Raspberry Pi. Teste de sensores ignorado.")
             return None  # indica teste não aplicável
 
-        if not sensor.hat_disponivel():
+        if not sensor.leitura_disponivel():
             print("❌ Sensor HAT não detectado")
             return False
 
